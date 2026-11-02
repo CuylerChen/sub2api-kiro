@@ -1,5 +1,7 @@
 # AGENTS.md — Panduan Maintainer `tamakiramimy/sub2api-kiro`
 
+> **本克隆（`CuylerChen/sub2api-kiro`）开发入口：** 增加功能、修改代码、同步上游一律按 `docs/FORK_FEATURE_WORKFLOW_CN.md` 执行，功能清单见 `docs/LOCAL_FEATURES.md`。直接上游是 `tamakiramimy/sub2api-kiro`（remote `tamakiramimy`，只读）。日常不要按本文 §4 对 Wei-Shaw 做 `reset --hard`。本文其余部分是 tamakiramimy 相对 Wei-Shaw 的历史维护手册，仅在用户明确要求跟 Wei-Shaw 时使用。
+
 Repo ini adalah distribusi mandiri yang mengikuti upstream `Wei-Shaw/sub2api`, dengan sejumlah kecil kustomisasi yang sengaja di-keep.
 
 > **2026-10-08 sync:** baseline upstream `3f1a2ea0a` (0.2.14), referensi nianzs `304cbe65b`. Semua fitur Kiro saat ini tetap di-keep, termasuk cache emulation lokal, usage session fingerprint dan stable account affinity, serta Sonnet/Opus 5.5. Fitur lokal tambahan (Image 2.5, GPT-6 prompt-cache dan Responses array tool output) juga tetap dipertahankan. Sinkronisasi ini memakai worktree terisolasi dan commit yang mempertahankan riwayat main; tidak melakukan reset/force-push/deploy. Daftar SHA dan prosedur rewrite historis di bawah bukan instruksi untuk mengubah riwayat tanpa persetujuan pengguna. CI terbaru memakai Go 1.27.0 dan golangci-lint v2.13; validasi lokal menggunakan v2.13.2. Detail: `docs/UPSTREAM_SYNC_20261008_CN.md`.
