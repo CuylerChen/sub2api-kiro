@@ -188,13 +188,14 @@ type AICredit struct {
 	MinimumBalance float64 `json:"minimum_balance,omitempty"`
 }
 
-// KiroCreditProgress 表示 Kiro 主额度或 Bonus 的用量进度。
+// KiroCreditProgress 表示 Kiro 主额度、试用或 bonuses[] 的用量进度。
 type KiroCreditProgress struct {
 	CurrentUsage   float64    `json:"current_usage"`
 	UsageLimit     float64    `json:"usage_limit"`
 	PercentageUsed float64    `json:"percentage_used"`
 	DaysRemaining  int        `json:"days_remaining,omitempty"`
 	ExpiryDate     *time.Time `json:"expiry_date,omitempty"`
+	DisplayName    string     `json:"display_name,omitempty"`
 }
 
 // KiroOverageInfo 表示 Kiro 账号的 overage 状态。
@@ -252,19 +253,20 @@ type UsageInfo struct {
 	AICredits []AICredit `json:"ai_credits,omitempty"`
 
 	// Kiro Credits 额度与 overage 信息
-	KiroSubscriptionName string              `json:"kiro_subscription_name,omitempty"`
-	KiroSubscriptionType string              `json:"kiro_subscription_type,omitempty"`
-	KiroResetAt          *time.Time          `json:"kiro_reset_at,omitempty"`
-	KiroOveragesEnabled  bool                `json:"kiro_overages_enabled,omitempty"`
-	KiroCredit           *KiroCreditProgress `json:"kiro_credit,omitempty"`
-	KiroBonus            *KiroCreditProgress `json:"kiro_bonus,omitempty"`
-	KiroOverage          *KiroOverageInfo    `json:"kiro_overage,omitempty"`
-	KiroQuotaState       string              `json:"kiro_quota_state,omitempty"`
-	KiroQuotaReason      string              `json:"kiro_quota_reason,omitempty"`
-	KiroQuotaResetAt     *time.Time          `json:"kiro_quota_reset_at,omitempty"`
-	KiroRuntimeState     string              `json:"kiro_runtime_state,omitempty"`
-	KiroRuntimeReason    string              `json:"kiro_runtime_reason,omitempty"`
-	KiroRuntimeResetAt   *time.Time          `json:"kiro_runtime_reset_at,omitempty"`
+	KiroSubscriptionName string               `json:"kiro_subscription_name,omitempty"`
+	KiroSubscriptionType string               `json:"kiro_subscription_type,omitempty"`
+	KiroResetAt          *time.Time           `json:"kiro_reset_at,omitempty"`
+	KiroOveragesEnabled  bool                 `json:"kiro_overages_enabled,omitempty"`
+	KiroCredit           *KiroCreditProgress  `json:"kiro_credit,omitempty"`
+	KiroBonus            *KiroCreditProgress  `json:"kiro_bonus,omitempty"`
+	KiroBonuses          []KiroCreditProgress `json:"kiro_bonuses,omitempty"`
+	KiroOverage          *KiroOverageInfo     `json:"kiro_overage,omitempty"`
+	KiroQuotaState       string               `json:"kiro_quota_state,omitempty"`
+	KiroQuotaReason      string               `json:"kiro_quota_reason,omitempty"`
+	KiroQuotaResetAt     *time.Time           `json:"kiro_quota_reset_at,omitempty"`
+	KiroRuntimeState     string               `json:"kiro_runtime_state,omitempty"`
+	KiroRuntimeReason    string               `json:"kiro_runtime_reason,omitempty"`
+	KiroRuntimeResetAt   *time.Time           `json:"kiro_runtime_reset_at,omitempty"`
 
 	// Antigravity 废弃模型转发规则 (old_model_id -> new_model_id)
 	ModelForwardingRules map[string]string `json:"model_forwarding_rules,omitempty"`

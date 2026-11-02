@@ -155,6 +155,8 @@ docs/*
 !docs/channel-monitor-v2-safe-defaults.md
 !docs/codex-credits.md
 !docs/DOCKER_BUILD_NOTES.md
+!docs/FORK_FEATURE_WORKFLOW_CN.md
+!docs/LOCAL_FEATURES.md
 !docs/legal/
 !docs/legal/*.md
 !docs/screenshots/

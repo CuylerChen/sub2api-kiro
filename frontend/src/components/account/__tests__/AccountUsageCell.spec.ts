@@ -474,6 +474,59 @@ describe('AccountUsageCell', () => {
     }])
   })
 
+  it('Kiro OAuth 会展示 bonuses 数组中的赠额名称和剩余天数', async () => {
+    getUsage.mockResolvedValue({
+      kiro_subscription_name: 'KIRO PRO+',
+      kiro_credit: {
+        current_usage: 200,
+        usage_limit: 1000,
+        percentage_used: 20
+      },
+      kiro_bonus: {
+        current_usage: 100,
+        usage_limit: 500,
+        percentage_used: 20,
+        days_remaining: 3,
+        expiry_date: '2026-03-20T00:00:00Z'
+      },
+      kiro_bonuses: [
+        {
+          current_usage: 150,
+          usage_limit: 500,
+          percentage_used: 30,
+          days_remaining: 10,
+          expiry_date: '2026-03-25T00:00:00Z',
+          display_name: 'Welcome Bonus'
+        }
+      ]
+    })
+
+    const wrapper = mount(AccountUsageCell, {
+      props: {
+        account: makeAccount({
+          id: 1004,
+          platform: 'kiro',
+          type: 'oauth'
+        })
+      },
+      global: {
+        stubs: {
+          UsageProgressBar: {
+            props: ['label', 'utilization', 'resetsAt'],
+            template: '<div class="usage-bar">{{ label }}|{{ utilization }}|{{ resetsAt }}</div>'
+          },
+          AccountQuotaInfo: true
+        }
+      }
+    })
+
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('admin.accounts.usageWindow.kiroBonus|20|2026-03-20T00:00:00Z')
+    expect(wrapper.text()).toContain('Welcome Bonus|30|2026-03-25T00:00:00Z')
+    expect(wrapper.text()).toContain('admin.accounts.usageWindow.kiroDaysRemaining')
+  })
+
 
   it('OpenAI OAuth 快照已过期时首屏会重新请求 usage', async () => {
     getUsage.mockResolvedValue({
