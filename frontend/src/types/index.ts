@@ -1443,6 +1443,7 @@ export interface KiroCreditProgress {
   percentage_used: number
   days_remaining?: number
   expiry_date?: string | null
+  display_name?: string
 }
 
 export interface KiroOverageInfo {
@@ -1494,6 +1495,7 @@ export interface AccountUsageInfo {
   kiro_overages_enabled?: boolean
   kiro_credit?: KiroCreditProgress | null
   kiro_bonus?: KiroCreditProgress | null
+  kiro_bonuses?: KiroCreditProgress[] | null
   kiro_overage?: KiroOverageInfo | null
   kiro_quota_state?: string
   kiro_quota_reason?: string

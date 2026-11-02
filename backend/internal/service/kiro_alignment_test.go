@@ -147,6 +147,13 @@ func TestAccountUsageService_GetUsage_KiroMapsCredits(t *testing.T) {
 					"freeTrialStatus":"ACTIVE",
 					"usageLimitWithPrecision":500
 				},
+				"bonuses":[{
+					"displayName":"Welcome Bonus",
+					"status":"ACTIVE",
+					"currentUsageWithPrecision":150,
+					"usageLimitWithPrecision":500,
+					"expiresAt":` + strconv.FormatInt(bonusExpiry, 10) + `
+				}],
 				"nextDateReset": ` + strconv.FormatInt(resetAt, 10) + `,
 				"overageCharges":0.08,
 				"resourceType":"CREDIT",
@@ -174,6 +181,10 @@ func TestAccountUsageService_GetUsage_KiroMapsCredits(t *testing.T) {
 	require.NotNil(t, usage.KiroBonus)
 	require.Equal(t, 25.0, usage.KiroBonus.CurrentUsage)
 	require.Equal(t, 500.0, usage.KiroBonus.UsageLimit)
+	require.Len(t, usage.KiroBonuses, 1)
+	require.Equal(t, "Welcome Bonus", usage.KiroBonuses[0].DisplayName)
+	require.Equal(t, 150.0, usage.KiroBonuses[0].CurrentUsage)
+	require.Equal(t, 500.0, usage.KiroBonuses[0].UsageLimit)
 	require.NotNil(t, usage.KiroOverage)
 	require.Equal(t, "$", usage.KiroOverage.CurrencySymbol)
 	require.Equal(t, 2.0, usage.KiroOverage.CurrentOverages)
@@ -637,6 +648,99 @@ func TestMapKiroUsageToInfo_CreditExhaustedWithAvailableBonusRemainsUsable(t *te
 
 	require.Equal(t, kiroQuotaStateNormal, info.KiroQuotaState)
 	require.NotNil(t, info.KiroBonus)
+}
+
+func TestMapKiroUsageToInfo_MapsBreakdownBonuses(t *testing.T) {
+	bonusExpiry := time.Now().Add(5 * 24 * time.Hour)
+	info := mapKiroUsageToInfo(&kiroUsageLimitsResponse{
+		UsageBreakdownList: []kiroUsageBreakdown{
+			{
+				ResourceType:              "CREDIT",
+				CurrentUsageWithPrecision: kiroFloatPtr(200),
+				UsageLimitWithPrecision:   kiroFloatPtr(1000),
+				FreeTrialInfo: &kiroFreeTrialInfo{
+					FreeTrialStatus:           "ACTIVE",
+					CurrentUsageWithPrecision: kiroFloatPtr(100),
+					UsageLimitWithPrecision:   kiroFloatPtr(500),
+				},
+				Bonuses: []kiroUsageBonus{
+					{
+						DisplayName:               "Welcome Bonus",
+						Status:                    "ACTIVE",
+						CurrentUsageWithPrecision: kiroFloatPtr(150),
+						UsageLimitWithPrecision:   kiroFloatPtr(500),
+						ExpiresAt:                 bonusExpiry.UnixMilli(),
+					},
+					{
+						DisplayName:               "Expired Promo",
+						Status:                    "EXPIRED",
+						CurrentUsageWithPrecision: kiroFloatPtr(0),
+						UsageLimitWithPrecision:   kiroFloatPtr(200),
+					},
+				},
+			},
+		},
+	})
+
+	require.NotNil(t, info.KiroCredit)
+	require.Equal(t, 200.0, info.KiroCredit.CurrentUsage)
+	require.NotNil(t, info.KiroBonus)
+	require.Equal(t, 100.0, info.KiroBonus.CurrentUsage)
+	require.Len(t, info.KiroBonuses, 1)
+	require.Equal(t, "Welcome Bonus", info.KiroBonuses[0].DisplayName)
+	require.Equal(t, 150.0, info.KiroBonuses[0].CurrentUsage)
+	require.Equal(t, 500.0, info.KiroBonuses[0].UsageLimit)
+	require.NotNil(t, info.KiroBonuses[0].ExpiryDate)
+	require.Greater(t, info.KiroBonuses[0].DaysRemaining, 0)
+}
+
+func TestMapKiroUsageToInfo_MapsTopLevelBonusesWhenBreakdownEmpty(t *testing.T) {
+	info := mapKiroUsageToInfo(&kiroUsageLimitsResponse{
+		Bonuses: []kiroUsageBonus{
+			{
+				DisplayName:  "Promo Credit",
+				Status:       "ACTIVE",
+				CurrentUsage: kiroFloatPtr(10),
+				UsageLimit:   kiroFloatPtr(80),
+			},
+		},
+		UsageBreakdownList: []kiroUsageBreakdown{
+			{
+				ResourceType:              "CREDIT",
+				CurrentUsageWithPrecision: kiroFloatPtr(50),
+				UsageLimitWithPrecision:   kiroFloatPtr(1000),
+			},
+		},
+	})
+
+	require.Len(t, info.KiroBonuses, 1)
+	require.Equal(t, "Promo Credit", info.KiroBonuses[0].DisplayName)
+	require.Equal(t, 10.0, info.KiroBonuses[0].CurrentUsage)
+	require.Equal(t, 80.0, info.KiroBonuses[0].UsageLimit)
+}
+
+func TestMapKiroUsageToInfo_CreditExhaustedWithArrayBonusRemainsUsable(t *testing.T) {
+	info := mapKiroUsageToInfo(&kiroUsageLimitsResponse{
+		OverageConfiguration: kiroOverageConfiguration{OverageStatus: "DISABLED"},
+		UsageBreakdownList: []kiroUsageBreakdown{
+			{
+				ResourceType:              "CREDIT",
+				CurrentUsageWithPrecision: kiroFloatPtr(2000),
+				UsageLimitWithPrecision:   kiroFloatPtr(2000),
+				Bonuses: []kiroUsageBonus{
+					{
+						DisplayName:               "Welcome Bonus",
+						Status:                    "ACTIVE",
+						CurrentUsageWithPrecision: kiroFloatPtr(10),
+						UsageLimitWithPrecision:   kiroFloatPtr(100),
+					},
+				},
+			},
+		},
+	})
+
+	require.Equal(t, kiroQuotaStateNormal, info.KiroQuotaState)
+	require.Len(t, info.KiroBonuses, 1)
 }
 
 func TestAccountUsageService_EnrichAccountWithKiroRuntimeState(t *testing.T) {

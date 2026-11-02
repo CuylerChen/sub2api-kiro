@@ -237,7 +237,18 @@
             color="emerald"
           />
           <div class="pl-[33px] text-[10px] text-gray-500 dark:text-gray-400">
-            {{ formatKiroCredit(usageInfo.kiro_bonus) }}{{ kiroBonusRemaining }}
+            {{ formatKiroCredit(usageInfo.kiro_bonus) }}{{ kiroRemainingText(usageInfo.kiro_bonus) }}
+          </div>
+        </template>
+        <template v-for="(bonus, index) in usageInfo.kiro_bonuses" :key="`${bonus.display_name || 'bonus'}-${index}`">
+          <UsageProgressBar
+            :label="bonus.display_name || t('admin.accounts.usageWindow.kiroBonus')"
+            :utilization="bonus.percentage_used"
+            :resets-at="bonus.expiry_date"
+            color="emerald"
+          />
+          <div class="pl-[33px] text-[10px] text-gray-500 dark:text-gray-400">
+            {{ formatKiroCredit(bonus) }}{{ kiroRemainingText(bonus) }}
           </div>
         </template>
         <div v-if="kiroOverageLabel" class="text-[10px] text-amber-600 dark:text-amber-400">
@@ -747,7 +758,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { adminAPI } from '@/api/admin'
-import type { Account, AccountUsageInfo, GeminiCredentials, WindowStats } from '@/types'
+import type { Account, AccountUsageInfo, GeminiCredentials, KiroCreditProgress, WindowStats } from '@/types'
 import { buildOpenAIUsageRefreshKey } from '@/utils/accountUsageRefresh'
 import { enqueueUsageRequest } from '@/utils/usageLoadQueue'
 import { formatCompactNumber } from '@/utils/format'
@@ -1017,12 +1028,12 @@ const formatKiroCredit = (credit: NonNullable<AccountUsageInfo['kiro_credit']>) 
     limit: formatCompactNumber(credit.usage_limit)
   })
 
-const kiroBonusRemaining = computed(() => {
-  const days = usageInfo.value?.kiro_bonus?.days_remaining
+const kiroRemainingText = (credit?: KiroCreditProgress | null) => {
+  const days = credit?.days_remaining
   return typeof days === 'number' && days > 0
     ? ` (${t('admin.accounts.usageWindow.kiroDaysRemaining', { days })})`
     : ''
-})
+}
 
 const kiroOverageLabel = computed(() => {
   const overage = usageInfo.value?.kiro_overage
