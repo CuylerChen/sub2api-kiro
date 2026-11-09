@@ -601,6 +601,11 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			if account.Platform == service.PlatformKiro {
 				kiroSessionFingerprint = h.gatewayService.KiroUsageSessionFingerprint(h.gatewayService.GenerateKiroSessionHash(parsedReq))
 			}
+			cacheSessionKey := strings.TrimSpace(parsedReq.MetadataUserID)
+			if cacheSessionKey == "" {
+				cacheSessionKey = sessionID
+			}
+			anthropicRequestBody := append([]byte(nil), body...)
 			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
 					Result:                 result,
@@ -618,6 +623,8 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 					KiroSessionFingerprint: kiroSessionFingerprint,
 					RequestPayloadHash:     requestPayloadHash,
 					ForceCacheBilling:      forceCacheBilling,
+					AnthropicRequestBody:   anthropicRequestBody,
+					CacheSessionKey:        cacheSessionKey,
 					APIKeyService:          h.apiKeyService,
 					ChannelUsageFields:     clientRequestedUsageFields(c, channelMapping, reqModel, result.UpstreamModel),
 				}); err != nil {

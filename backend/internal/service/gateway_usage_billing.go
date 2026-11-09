@@ -52,6 +52,8 @@ type RecordUsageInput struct {
 	KiroSessionFingerprint string             // Kiro 调度会话的不可逆管理员审计标识
 	RequestPayloadHash     string             // 请求体语义哈希，用于降低 request_id 误复用时的静默误去重风险
 	ForceCacheBilling      bool               // 强制缓存计费：将 input_tokens 转为 cache_read 计费（用于粘性会话切换）
+	AnthropicRequestBody   []byte             // Anthropic Messages 原始请求体，用于按 kiro-gateway 规则重算缓存读写
+	CacheSessionKey        string             // 会话键，同一会话的历史前缀才能记为缓存读取
 	APIKeyService          APIKeyQuotaUpdater // 可选：用于更新API Key配额
 	QuotaPlatform          string             // user×platform 配额计量平台：handler 在请求 ctx 内经 QuotaPlatform() 算定后传入（后扣运行在 worker 池 background ctx 上，取不到 ForcePlatform）
 
@@ -668,6 +670,8 @@ func (s *GatewayService) RecordUsage(ctx context.Context, input *RecordUsageInpu
 		KiroSessionFingerprint: input.KiroSessionFingerprint,
 		RequestPayloadHash:     input.RequestPayloadHash,
 		ForceCacheBilling:      input.ForceCacheBilling,
+		AnthropicRequestBody:   input.AnthropicRequestBody,
+		CacheSessionKey:        input.CacheSessionKey,
 		APIKeyService:          input.APIKeyService,
 		QuotaPlatform:          input.QuotaPlatform,
 		ChannelUsageFields:     input.ChannelUsageFields,
@@ -692,6 +696,8 @@ type recordUsageCoreInput struct {
 	KiroSessionFingerprint string
 	RequestPayloadHash     string
 	ForceCacheBilling      bool
+	AnthropicRequestBody   []byte
+	CacheSessionKey        string
 	APIKeyService          APIKeyQuotaUpdater
 	QuotaPlatform          string
 	ChannelUsageFields
@@ -834,6 +840,9 @@ func (s *GatewayService) recordUsageCore(ctx context.Context, input *recordUsage
 	// 通用兜底（与 OpenAI 路径的 usageBillingModelCandidates 语义对齐）：
 	// 选定模型查不到任何价格时回退到实际转发的具体模型。已定价流量不受影响。
 	billingModel = s.billableModelWithFallback(ctx, apiKey, billingModel, result.UpstreamModel, result.Model)
+	if !input.ForceCacheBilling && account != nil && len(input.AnthropicRequestBody) > 0 {
+		applyAnthropicKiroGatewayCacheUsage(account.ID, input.CacheSessionKey, billingModel, input.AnthropicRequestBody, &result.Usage)
+	}
 
 	// 确定 RequestedModel（渠道映射前的原始模型）
 	requestedModel := result.Model
