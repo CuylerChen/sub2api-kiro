@@ -36,6 +36,18 @@
 - 测试：`kiro_alignment_test.go` 映射/耗尽；`AccountUsageCell.spec.ts` 展示 Welcome Bonus
 - 同步冲突处理：保留本 fork 的 `bonuses` 解析与 `kiro_bonuses` 展示；已有文件先取 tamakiramimy 再打回上述接线
 
+### `kiro-missing-expires-at`
+
+- 状态：进行中
+- 说明：Kiro OAuth 账号缺少 `expires_at` 时，首次刷新调度先写入 10 分钟后过期（不打上游）；到期后再刷新，并把上游返回的最新 `expires_at` 写回账号凭证。
+- 分支 / commit 标题：`feat(kiro-missing-expires-at): bootstrap missing expires_at then persist refresh expiry`
+- 独立目录：无（扩展已有 Kiro token 刷新路径）
+- 已有文件接线：
+  - `backend/internal/service/kiro_token_refresher.go` — 缺 `expires_at` 先 stamp 10 分钟；正式刷新后强制写入上游 `expires_at`
+  - `backend/internal/service/kiro_token_provider.go` — 强制刷新同样写回最新 `expires_at` 并清掉临时标记
+- 测试：`kiro_token_refresher_test.go`；`kiro_token_provider_test.go` 强制刷新写回过期时间
+- 同步冲突处理：保留本 fork 的缺 `expires_at` 引导与刷新后写回；已有文件先取 tamakiramimy 再打回上述接线
+
 <!--
 ### `<短名>`
 

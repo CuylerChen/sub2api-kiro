@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -109,4 +110,38 @@ func TestKiroTokenProviderForceRefreshRaceRecoveryDoesNotSetError(t *testing.T) 
 	require.NoError(t, err)
 	require.Equal(t, "fresh-access", token)
 	require.Equal(t, 0, repo.setErrorCalls)
+}
+
+func TestKiroTokenProviderForceRefreshPersistsUpstreamExpiresAt(t *testing.T) {
+	account := &Account{
+		ID:       42,
+		Platform: PlatformKiro,
+		Type:     AccountTypeOAuth,
+		Credentials: map[string]any{
+			"refresh_token":             "old-refresh",
+			"access_token":              "old-access",
+			kiroProvisionalExpiresAtKey: true,
+		},
+	}
+	repo := &kiroTokenProviderRepo{
+		mockAccountRepoForGemini: mockAccountRepoForGemini{
+			accountsByID: map[int64]*Account{account.ID: account},
+		},
+	}
+	expiresAt := time.Now().Add(50 * time.Minute).UTC().Format(time.RFC3339)
+	provider := NewKiroTokenProvider(repo, nil, nil)
+	provider.kiroOAuthService = &stubKiroAccountTokenRefresher{
+		tokenInfo: &KiroTokenInfo{
+			AccessToken:  "new-access",
+			RefreshToken: "new-refresh",
+			ExpiresAt:    expiresAt,
+		},
+	}
+
+	token, err := provider.ForceRefreshAccessToken(context.Background(), account)
+	require.NoError(t, err)
+	require.Equal(t, "new-access", token)
+	require.Equal(t, expiresAt, account.GetCredential("expires_at"))
+	_, hasProvisional := account.Credentials[kiroProvisionalExpiresAtKey]
+	require.False(t, hasProvisional)
 }
